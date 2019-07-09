@@ -11,10 +11,37 @@ app.use(express.urlencoded({extended: false}));
 // this sends the data raw. Note JSON application must be turned on in postman in headers
 app.use(express.json());
 
+// out here to apply to all endpoints/every request
+app.use('/auth/*', (req, res, next) => {
+    console.log('Request URL: ', req.url);
+    console.log('Request Query String: ', req.query);
+    console.log('Request Body: ', req.body);
+
+    next();
+});
+
+function withUser(req, res, next){
+    // User came from DB query
+    const user = {
+        id: 78,
+        name: 'Hank Hill',
+        email: 'hank@testcom'
+    };
+
+    if(user){
+        req.user = user;
+        next();
+    }else{
+        res.status(401).send('Unauthorized');
+    }
+}
+
 // method chained off of app. what method you expect the request to come
-app.get('/', (request, response) => {
+app.get('/', withUser, (request, response) => {
     // function gets called when request comes to forward slash
-    console.log('Request Received from: ', request.url);
+    // console.log('Request Received from: ', request.url);
+
+    console.log('HOME CONTROLLER USER: ', request.user); 
 
     // send something back client
     response.send({
@@ -57,7 +84,7 @@ app.get('/article', (req, res) => {
     });
 });
 
-app.post('/sign-in', (req, res) => {
+app.post('/auth/sign-in', (req, res) => {
     console.log('POST DATA: ', req.body);
 
     res.send({
@@ -70,7 +97,7 @@ app.post('/sign-in', (req, res) => {
 // PATCH DATA: name, email
 
 // OUTPUT { message: 'User updated', patchData: {}}
-app.patch('/update-user', (req, res) => {
+app.patch('/auth/update-user', (req, res) => {
     res.send({
         message: 'User updated',
         patchData: req.body
